@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>2048</title>
+</head>
+
+<body>
+  <!-- 页面 -->
+  <div class="area"></div>
+  <!-- 死亡提示区域 -->
+  <div class="death"></div>
+  <style>
+    .area {
+      display: flex;
+      flex-wrap: wrap;
+      width: 200px;
+      height: 200px;
+      font-size: 25px;
+    }
+  </style>
+  <script>
+    const area = document.querySelector('.area')
+    const death = document.querySelector('.death')
+    let arr = [] //方块坐标和数值
+    let rArr = [] //旋转数组
+    //初始化
+    for (let i = 0; i < 5; i++) {
+      arr[i] = []
+      rArr[i] = []
+    }
+    deathJudge() //开局只随机生成两个方块不需要判断死亡
+
+    //随机生成两个不相同随机坐标
+    let a = 0, c = 0
+    function randomStart() {
+      //生成的随机数不能重复 连续两次的话
+      a = Math.floor(Math.random() * 5)  //0-5
+      c = Math.floor(Math.random() * 5)
+      if (c === a) {
+        randomStart()
+      }
+    }
+    //开局生成两个不重复的方块
+    randomStart()
+    Math.random() > 0.5 ? arr[0][a] = 2 : arr[a][0] = 2
+    Math.random() > 0.5 ? arr[0][c] = 2 : arr[c][0] = 2
+
+    //移动之后再随机生成一个方块 数值可能是4或者2
+    function random() {
+      let scope = []
+      for (let j = 0; j < 5; j++) {
+        for (let i = 0; i < 5; i++) {
+          //方块不重复
+          //把没有值的坐标放进数组 然后再随机索引进行选择
+          if (!arr[j][i]) {
+            scope.push([j, i])
+          }
+        }
+      }
+      //随机索引
+      let index = Math.floor(Math.random() * scope.length)
+      let randomY = scope[index][0]
+      let randomX = scope[index][1]
+
+      //随机数值
+      Math.random() > 0.5 ? arr[randomY][randomX] = 2 : arr[randomY][randomX] = 4
+    }
+
+
+    let type = ''//移动方向
+    //每次移动完生成一个边缘新方块
+
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'ArrowUp') {
+        type = 'up'
+        rotate('up')//旋转
+        move()//移动
+        add()
+        rotate('down')//旋转回去
+
+      }
+
+      //这里处理错了down
+      else if (e.key === 'ArrowDown') {
+        type = 'down'
+        rotate('down')//旋转
+        move()//移动
+        add()
+        rotate('up')//旋转回去
+
+      }
+      else if (e.key === 'ArrowLeft') {
+        type = 'left'
+        move()
+        add()
+      }
+      else if (e.key === 'ArrowRight') {
+        type = 'right'
+        rotate('right')//旋转
+        move()//移动
+        add()
+        //因为这里是翻转 所以和之前一样处理翻转回去就行
+        rotate('right')
+      }
+      //移动处理完毕生成新随机方块
+      random()
+      render()
+      deathJudge()
+    })
+
+    //翻转数组 变成左移
+    function rotate(type) {
+      console.log('rotate', type);
+      for (let y = 0; y < 5; y++) {
+        for (let x = 0; x < 5; x++) {
+          if (arr[y][x]) {
+            //翻转
+            if (type === 'right') {
+              //这里旋转结果必须放进新数组防止重复处理
+              rArr[y][4 - x] = arr[y][x]
+            }
+            //顺时针90
+            else if (type === 'down') {
+              rArr[x][4 - y] = arr[y][x]
+            }
+            //逆时针90
+            else if (type === 'up') {
+              rArr[4 - x][y] = arr[y][x]
+            }
+            //删除原位置元素
+            // arr[y][x] = 0
+            delete arr[y][x]
+          }
+        }
+      }
+      //把旋转之后的数组给arr 方便转回去
+      for (let j = 0; j < 5; j++) {
+        for (let i = 0; i < 5; i++) {
+          if (rArr[j][i]) {
+            arr[j][i] = rArr[j][i]
+            delete rArr[j][i]
+          }
+        }
+      }
+      // console.log('rotate旋转处理之后的arr', arr);
+    }
+
+
+    // 移动逻辑
+    //所有数组都旋转处理成左移判断
+    function move() {
+      console.log('move');
+      for (let y = 0; y < 5; y++) {
+        for (let x = 0; x < 5; x++) {
+          if (!arr[y][x]) {
+            //后面如果后面有值就给前面空位
+            for (let i = x; i < 5; i++) {
+              //只执行一次 找出最靠近空位的值
+              if (arr[y][i]) {
+                arr[y][x] = arr[y][i]
+                arr[y][i] = 0
+                //这里用哪个符号比较好
+                break //跳出for i 循环么
+              }
+            }
+          }
+        }
+      }
+    }
+
+    //合并
+    function add() {
+      console.log('合并add', type, arr);
+      for (let j = 0; j < 5; j++) {
+        for (let i = 0; i < 4; i++) {
+          //相邻检测
+          if (arr[j][i]) {
+            if (arr[j][i] === arr[j][i + 1]) {
+              console.log('找到左移方块', j, i);
+              arr[j][i] += arr[j][i]
+              arr[j][i + 1] = 0
+            }
+          }
+        }
+      }
+      //全部合并完之后再向左移动
+      move()
+    }
+
+    //死亡判断
+    function deathJudge() {
+      let death = true //表示是否进入死亡
+      for (let y = 0; y < 5; y++) {
+        //如果这一行有空位 就跳出循环
+        //这里不是表示每个都大于
+        //不能用every因为稀疏数组不执行
+        for (let x = 0; x < 5; x++) {
+          //有一个位置上的元素没有值 就不是死亡
+          if (!arr[y][x]) {
+            death = false
+          }
+        }
+      }
+      console.log(death, '死亡判断');
+      if (death === true) {
+        deachCss()  //死亡效果
+      }
+    }
+
+
+    function deachCss() {
+      //找到数组中的最大数值
+      let maxArr = []
+      let maxX = 0
+      for (let y = 0; y < 5; y++) {
+        maxX = arr[y][0]
+        for (let x = 1; x < 5; x++) {
+          if (arr[y][x] > maxX) {
+            maxX = arr[y][x]
+          }
+        }
+        maxArr.push(maxX) //每行的最大
+      }
+      console.log(maxArr);
+      //再从每行的最大里面找
+      let max = maxArr[0]
+      for (let a = 1; a < maxArr.length; a++) {
+        if (max < maxArr[a]) {
+          max = maxArr[a]
+        }
+      }
+      //死亡效果
+      death.innerText = `游戏结束 最大方块为${max}`
+    }
+
+
+    //渲染页面
+    function render() {
+      block = ''
+      for (let y = 0; y < 5; y++) {
+        for (let x = 0; x < 5; x++) {
+          if (arr[y][x]) {
+            block += `<div class="square"style="width: 40px;height: 40px;text-align: center; line-height: 40px; background-color: pink;">${arr[y][x]}</div>`
+          }
+          else {
+            block += ' <div class="block" style="width: 40px;height: 40px;background-color: antiquewhite;"></div>'
+
+          }
+        }
+      }
+      area.innerHTML = block
+    }
+    render()
+
+
+  </script>
+</body>
+
+</html>
