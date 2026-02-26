@@ -8,26 +8,164 @@
 </head>
 
 <body>
-  <!-- 页面 -->
-  <div class="area"></div>
-  <!-- 死亡提示区域 -->
-  <div class="death"></div>
+  <div class="big">
+    <!-- 提示区域 -->
+    <div class="title">
+      <div class="h1">2048</div>
+      <div class="tips">
+        <div class="now"> 当前得分:<span id="score">2</span> </div>
+        <button class="restart-btn">重新开始</button>
+      </div>
+    </div>
+    <!-- 游戏部分 -->
+    <div class="area"></div>
+    <!-- 游戏结束遮罩层 -->
+    <div class="mask" style="display: none;">
+      <div class="h1">游戏结束</div>
+      <button class="restart-btn">再来一局</button>
+    </div>
+  </div>
   <style>
-    .area {
+    body {
+      margin: 0;
+      height: 100vh;
       display: flex;
-      flex-wrap: wrap;
+      justify-content: center;
+      align-items: center;
+      background-color: #f0f0f0;
+    }
+
+    .big {
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      background-color: #ECF3E8;
+      background-image: url('./bcg.png');
+      background-size: cover;
+      background-position: center;
+      width: 300px;
+      height: 500px;
+    }
+
+    .title {
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-end;
+      align-items: center;
       width: 200px;
-      height: 200px;
-      font-size: 25px;
+      height: 100px;
+      /* background-color: #ECF3E8; */
+      margin-bottom: 10px;
+    }
+
+    /* 让2048标题把剩下的撑满 */
+    .title .h1 {
+      font-size: 40px;
+      color: #84B17A;
+      /* background-color: #ECF3E8; */
+      font-family: "SF Pro Rounded", "Nunito", "Poppins", "PingFang SC", "Microsoft YaHei", "Helvetica Neue", Arial, sans-serif;
+      font-weight: 800;
+      line-height: 1;
+      letter-spacing: 0.5px;
+      font-variant-numeric: tabular-nums;
+      margin: 10px;
+    }
+
+    .title .tips {
+      display: flex;
+      justify-content: space-evenly;
+      align-items: center;
+      line-height: 50px;
+      border-radius: 25px;
+      width: 220px;
+      height: 50px;
+      background-color: #E6EFE2;
+      color: #6D7B6A;
+      font-size: 15px;
+    }
+
+    .tips .restart-btn {
+      align-items: center;
+      background-color: #EFF6EB;
+      color: #6D7B6A;
+      font-size: 10px;
+      width: auto;
+      padding: 0 10px;
+      height: 30px;
+      border-radius: 15px;
+      border: none;
+      cursor: pointer;
+    }
+
+    .area {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 2.5px;
+      padding: 5px;
+      background-color: #C8D6C4;
+      border-radius: 6px;
+      font-size: 20px;
+    }
+
+    .area .square,
+    .area .block {
+      border: 2.5px #C8D6C4 solid;
+      border-radius: 5px;
+      text-align: center;
+      line-height: 50px;
+    }
+
+    /* 游戏结束遮罩层 */
+    .mask {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(236, 243, 232, 0.8);
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      z-index: 10;
+      border-radius: 6px;
+    }
+
+    .mask .h1 {
+      font-size: 40px;
+      color: #6D7B6A;
+      margin-bottom: 20px;
+      font-weight: bold;
+    }
+
+    .restart-btn {
+      padding: 10px 20px;
+      background-color: #84B17A;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      font-size: 18px;
+      cursor: pointer;
+      transition: background-color 0.3s;
+    }
+
+    .restart-btn:hover {
+      background-color: #6D7B6A;
     }
   </style>
   <script>
     const area = document.querySelector('.area')
+    const mask = document.querySelector('.mask')
+    const restartBtns = document.querySelectorAll('.restart-btn')
     const death = document.querySelector('.death')
+    const tips = document.querySelector('.tips')
     let arr = [] //方块坐标和数值
     let rArr = [] //旋转数组
+    let max = 2 //初始最大值
     //初始化
-    for (let i = 0; i < 5; i++) {
+    for (let i = 0; i < 4; i++) {
       arr[i] = []
       rArr[i] = []
     }
@@ -37,8 +175,8 @@
     let a = 0, c = 0
     function randomStart() {
       //生成的随机数不能重复 连续两次的话
-      a = Math.floor(Math.random() * 5)  //0-5
-      c = Math.floor(Math.random() * 5)
+      a = Math.floor(Math.random() * 4)  //0-4
+      c = Math.floor(Math.random() * 4)
       if (c === a) {
         randomStart()
       }
@@ -51,8 +189,8 @@
     //移动之后再随机生成一个方块 数值可能是4或者2
     function random() {
       let scope = []
-      for (let j = 0; j < 5; j++) {
-        for (let i = 0; i < 5; i++) {
+      for (let j = 0; j < 4; j++) {
+        for (let i = 0; i < 4; i++) {
           //方块不重复
           //把没有值的坐标放进数组 然后再随机索引进行选择
           if (!arr[j][i]) {
@@ -66,7 +204,11 @@
       let randomX = scope[index][1]
 
       //随机数值
-      Math.random() > 0.5 ? arr[randomY][randomX] = 2 : arr[randomY][randomX] = 4
+      if (max <= 32) {
+        Math.random() > 0.5 ? arr[randomY][randomX] = 2 : arr[randomY][randomX] = 4
+      } else {
+        Math.random() > 0.5 ? arr[randomY][randomX] = 4 : arr[randomY][randomX] = 8
+      }
     }
 
 
@@ -114,21 +256,21 @@
     //翻转数组 变成左移
     function rotate(type) {
       console.log('rotate', type);
-      for (let y = 0; y < 5; y++) {
-        for (let x = 0; x < 5; x++) {
+      for (let y = 0; y < 4; y++) {
+        for (let x = 0; x < 4; x++) {
           if (arr[y][x]) {
             //翻转
             if (type === 'right') {
               //这里旋转结果必须放进新数组防止重复处理
-              rArr[y][4 - x] = arr[y][x]
+              rArr[y][3 - x] = arr[y][x]
             }
             //顺时针90
             else if (type === 'down') {
-              rArr[x][4 - y] = arr[y][x]
+              rArr[x][3 - y] = arr[y][x]
             }
             //逆时针90
             else if (type === 'up') {
-              rArr[4 - x][y] = arr[y][x]
+              rArr[3 - x][y] = arr[y][x]
             }
             //删除原位置元素
             // arr[y][x] = 0
@@ -137,8 +279,8 @@
         }
       }
       //把旋转之后的数组给arr 方便转回去
-      for (let j = 0; j < 5; j++) {
-        for (let i = 0; i < 5; i++) {
+      for (let j = 0; j < 4; j++) {
+        for (let i = 0; i < 4; i++) {
           if (rArr[j][i]) {
             arr[j][i] = rArr[j][i]
             delete rArr[j][i]
@@ -153,11 +295,11 @@
     //所有数组都旋转处理成左移判断
     function move() {
       console.log('move');
-      for (let y = 0; y < 5; y++) {
-        for (let x = 0; x < 5; x++) {
+      for (let y = 0; y < 4; y++) {
+        for (let x = 0; x < 4; x++) {
           if (!arr[y][x]) {
             //后面如果后面有值就给前面空位
-            for (let i = x; i < 5; i++) {
+            for (let i = x; i < 4; i++) {
               //只执行一次 找出最靠近空位的值
               if (arr[y][i]) {
                 arr[y][x] = arr[y][i]
@@ -170,11 +312,24 @@
         }
       }
     }
-
+    //寻找当前最大值
+    const findMax = () => {
+      //改变全局变量max
+      for (let y = 0; y < 4; y++) {
+        for (let x = 0; x < 4; x++) {
+          //当前格子有值 比 max 大时才更新
+          if (arr[y][x] && arr[y][x] > max) {
+            max = arr[y][x]
+          }
+        }
+      }
+      console.log('重新开始之后的max', max)
+      return max
+    }
     //合并
     function add() {
       console.log('合并add', type, arr);
-      for (let j = 0; j < 5; j++) {
+      for (let j = 0; j < 4; j++) {
         for (let i = 0; i < 4; i++) {
           //相邻检测
           if (arr[j][i]) {
@@ -186,67 +341,112 @@
           }
         }
       }
+
       //全部合并完之后再向左移动
       move()
+      //算分数
+      findMax()
+      console.log('合并之后此时max', max)
+      document.getElementById('score').innerText = max
+
     }
 
     //死亡判断
     function deathJudge() {
-      let death = true //表示是否进入死亡
-      for (let y = 0; y < 5; y++) {
-        //如果这一行有空位 就跳出循环
-        //这里不是表示每个都大于
-        //不能用every因为稀疏数组不执行
-        for (let x = 0; x < 5; x++) {
-          //有一个位置上的元素没有值 就不是死亡
+      // 1. 如果有空位，肯定不是死亡
+      for (let y = 0; y < 4; y++) {
+        for (let x = 0; x < 4; x++) {
           if (!arr[y][x]) {
-            death = false
+            return false
           }
         }
       }
-      console.log(death, '死亡判断');
-      if (death === true) {
-        deachCss()  //死亡效果
+
+      // 2. 如果没有空位，检查相邻是否有相同（能否消除）
+      for (let y = 0; y < 4; y++) {
+        for (let x = 0; x < 4; x++) {
+          // 向右看（最后一列不用看）
+          if (x < 3 && arr[y][x] === arr[y][x + 1]) {
+            return false
+          }
+          // 向下看（最后一行不用看）
+          if (y < 3 && arr[y][x] === arr[y + 1][x]) {
+            return false
+          }
+        }
       }
+
+      // 3. 确实没救了
+      console.log('确实死亡了');
+      deathCss()
+      return true
     }
 
 
-    function deachCss() {
-      //找到数组中的最大数值
-      let maxArr = []
-      let maxX = 0
-      for (let y = 0; y < 5; y++) {
-        maxX = arr[y][0]
-        for (let x = 1; x < 5; x++) {
-          if (arr[y][x] > maxX) {
-            maxX = arr[y][x]
-          }
-        }
-        maxArr.push(maxX) //每行的最大
-      }
-      console.log(maxArr);
-      //再从每行的最大里面找
-      let max = maxArr[0]
-      for (let a = 1; a < maxArr.length; a++) {
-        if (max < maxArr[a]) {
-          max = maxArr[a]
-        }
-      }
+    function deathCss() {
       //死亡效果
-      death.innerText = `游戏结束 最大方块为${max}`
+      const max = findMax()
+      mask.querySelector('.h1').innerText = `游戏结束！\n最大方块: ${max}`
+      mask.style.display = 'flex'
     }
 
+    // 重新开始游戏
+    restartBtns.forEach(element => {
+      element.addEventListener('click', () => {
+        console.log('重新开始')
+        // 1. 重置数据
+        max = 2
+        document.getElementById('score').innerText = max
+        for (let i = 0; i < 4; i++) {
+          arr[i] = []
+          rArr[i] = []
+        }
+
+        // 2. 隐藏遮罩
+        mask.style.display = 'none'
+
+        // 3. 重新开局生成方块
+        randomStart()
+        Math.random() > 0.5 ? arr[0][a] = 2 : arr[a][0] = 2
+        Math.random() > 0.5 ? arr[0][c] = 2 : arr[c][0] = 2
+
+        // 4. 重新渲染
+        render()
+      })
+    });
+
+
+
+    //根据格子的值来渲染不同的背景色
+    const renderColor = (num) => {
+      switch (num) {
+        case 2:
+          return '#EFF6EB'; // 2 的背景色
+        case 4:
+          return '#D6EFD5'; // 4 的背景色
+        case 8:
+          return '#95CF7A'; // 8 的背景色
+        case 16:
+          return '#78BE60'
+        case 32:
+          return '#F2DF88'; // 8 的背景色
+
+        default:
+          return '#E9C557'; // 默认颜色（比如 0 或其他未知数字）
+      }
+    }
 
     //渲染页面
     function render() {
       block = ''
-      for (let y = 0; y < 5; y++) {
-        for (let x = 0; x < 5; x++) {
+      for (let y = 0; y < 4; y++) {
+        for (let x = 0; x < 4; x++) {
           if (arr[y][x]) {
-            block += `<div class="square"style="width: 40px;height: 40px;text-align: center; line-height: 40px; background-color: pink;">${arr[y][x]}</div>`
+            const color = renderColor(arr[y][x])
+            block += `<div class="square"style="width: 50px; height: 50px; text-align: center; line-height: 40px; background-color: ${color}; color:#7E6232">${arr[y][x]}</div>`
           }
           else {
-            block += ' <div class="block" style="width: 40px;height: 40px;background-color: antiquewhite;"></div>'
+            block += ' <div class="block" style="width: 50px;height: 50px;background-color: #C8D6C4;;"></div>'
 
           }
         }
